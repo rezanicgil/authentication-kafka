@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, SelectQueryBuilder } from "typeorm";
@@ -11,6 +12,8 @@ import { SearchUsersDto } from "../dto/search-users.dto";
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+  
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -51,15 +54,20 @@ export class UserService {
   }
 
   async searchUsers(searchDto: SearchUsersDto): Promise<{ users: User[]; total: number }> {
+    this.logger.log(`Executing search with filters: ${JSON.stringify(searchDto)}`);
+    
     const queryBuilder = this.createSearchQuery(searchDto);
     
     const total = await queryBuilder.getCount();
+    this.logger.log(`Query returned ${total} total results`);
     
     const users = await queryBuilder
       .skip((searchDto.page - 1) * searchDto.limit)
       .take(searchDto.limit)
       .getMany();
 
+    this.logger.log(`Returning ${users.length} users for page ${searchDto.page}`);
+    
     return { users, total };
   }
 

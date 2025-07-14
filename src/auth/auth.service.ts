@@ -16,7 +16,7 @@ export class AuthService {
 
   async register(
     registerDto: RegisterDto,
-  ): Promise<{ user: User; token: string }> {
+  ): Promise<{ user: Omit<User, 'password'>; token: string }> {
     const user = await this.userService.create(registerDto);
 
     await this.kafkaService.sendUserEvent("user.registered", {
@@ -28,11 +28,14 @@ export class AuthService {
     });
 
     const token = this.generateToken(user);
+    
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
 
-    return { user, token };
+    return { user: userWithoutPassword, token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
+  async login(loginDto: LoginDto): Promise<{ user: Omit<User, 'password'>; token: string }> {
     const user = await this.userService.findByEmail(loginDto.email);
 
     if (!user) {
@@ -44,19 +47,24 @@ export class AuthService {
       user.password,
     );
 
-    if (!isPasswordValid) {
+    if (!isPasswordValid || !user.isActive) {
       throw new UnauthorizedException("Invalid credentials");
     }
 
     await this.kafkaService.sendUserEvent("user.logged_in", {
       userId: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       timestamp: new Date().toISOString(),
     });
 
     const token = this.generateToken(user);
+    
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
 
-    return { user, token };
+    return { user: userWithoutPassword, token };
   }
 
   private generateToken(user: User): string {

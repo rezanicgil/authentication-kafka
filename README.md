@@ -174,6 +174,60 @@ The User entity includes the following fields:
 - `createdAt` - Registration timestamp
 - `updatedAt` - Last update timestamp
 
+## Testing
+
+The project includes comprehensive test coverage with unit tests, integration tests, and end-to-end tests.
+
+### Running Tests
+
+```bash
+# Run all unit tests
+npm test
+
+# Run tests with coverage report
+npm run test:cov
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run end-to-end tests
+npm run test:e2e
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Unit Tests**: All services and controllers
+- **Integration Tests**: Search functionality with real database
+- **End-to-End Tests**: Complete API workflows
+- **Error Handling**: Database, Kafka, JWT, and validation errors
+- **Edge Cases**: Pagination, filtering, sorting scenarios
+- **Performance Tests**: Large dataset handling
+
+**Coverage Thresholds:**
+- Branches: 80%
+- Functions: 80%
+- Lines: 80%
+- Statements: 80%
+
+### Test Structure
+
+```
+src/
+├── auth/
+│   ├── auth.controller.spec.ts
+│   ├── auth.service.spec.ts
+├── user/
+│   ├── user.controller.spec.ts
+│   ├── user.service.spec.ts
+├── test/
+│   ├── test-helpers.ts
+│   └── setup.ts
+test/
+└── search-integration.e2e-spec.ts
+```
+
 ## Requirements
 
 - Node.js 18+
