@@ -197,7 +197,7 @@ describe('UserController', () => {
         page: 1,
         limit: 5,
         sortBy: 'lastName',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       const serviceResult = {
@@ -262,7 +262,7 @@ describe('UserController', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       const serviceResult = {

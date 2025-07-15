@@ -29,8 +29,7 @@ export class AuthService {
 
     const token = this.generateToken(user);
     
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
 
     return { user: userWithoutPassword, token };
   }
@@ -61,8 +60,7 @@ export class AuthService {
 
     const token = this.generateToken(user);
     
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
 
     return { user: userWithoutPassword, token };
   }

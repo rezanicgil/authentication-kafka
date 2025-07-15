@@ -72,7 +72,7 @@ export class UserService {
   }
 
   private createSearchQuery(searchDto: SearchUsersDto): SelectQueryBuilder<User> {
-    let queryBuilder = this.userRepository
+    const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .where('user.isActive = :isActive', { isActive: true });
 

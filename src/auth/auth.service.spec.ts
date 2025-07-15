@@ -4,8 +4,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { mockRegisterDto, mockLoginDto, mockUser, createTestingModule } from '../test/test-helpers';
-import * as bcrypt from 'bcryptjs';
+import { mockRegisterDto, mockLoginDto, mockUser } from '../test/test-helpers';
 
 jest.mock('bcryptjs');
 

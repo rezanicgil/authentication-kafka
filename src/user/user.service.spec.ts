@@ -274,7 +274,7 @@ describe('UserService', () => {
         interests: ['coding'],
         skills: ['javascript'],
         sortBy: 'firstName',
-        sortOrder: 'ASC' as 'ASC',
+        sortOrder: 'ASC' as const,
         page: 1,
         limit: 10,
       };
@@ -314,7 +314,7 @@ describe('UserService', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       mockQueryBuilder.getCount.mockResolvedValue(1);
@@ -339,7 +339,7 @@ describe('UserService', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       mockQueryBuilder.getCount.mockResolvedValue(1);
@@ -365,7 +365,7 @@ describe('UserService', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       mockQueryBuilder.getCount.mockResolvedValue(1);
@@ -409,7 +409,7 @@ describe('UserService', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       mockQueryBuilder.getCount.mockResolvedValue(10);
@@ -432,7 +432,7 @@ describe('UserService', () => {
         page: 1,
         limit: 10,
         sortBy: 'createdAt',
-        sortOrder: 'DESC' as 'DESC',
+        sortOrder: 'DESC' as const,
       };
 
       // Call searchUsers to trigger createSearchQuery
