@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
@@ -11,6 +10,7 @@ export const createMockRepository = () => ({
   create: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
+  merge: jest.fn(),
   createQueryBuilder: jest.fn(() => ({
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -128,4 +128,14 @@ export const mockSearchUsersDto = {
   sortOrder: 'ASC' as 'ASC' | 'DESC',
   page: 1,
   limit: 10,
+};
+
+export const mockUpdateProfileDto = {
+  firstName: 'Updated',
+  lastName: 'User',
+  bio: 'Updated bio',
+  city: 'Ankara',
+  country: 'Turkey',
+  interests: ['reading', 'travel'],
+  skills: ['python', 'java'],
 };

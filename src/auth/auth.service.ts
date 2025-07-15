@@ -29,7 +29,8 @@ export class AuthService {
 
     const token = this.generateToken(user);
     
-    const { ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
 
     return { user: userWithoutPassword, token };
   }
@@ -60,7 +61,8 @@ export class AuthService {
 
     const token = this.generateToken(user);
     
-    const { ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
 
     return { user: userWithoutPassword, token };
   }

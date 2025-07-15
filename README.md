@@ -88,6 +88,61 @@ User login
 }
 ```
 
+### User Profile Management
+
+#### PUT /users/profile
+Update user profile information (requires authentication)
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "bio": "Software developer passionate about clean code",
+  "city": "Istanbul",
+  "country": "Turkey",
+  "gender": "male",
+  "dateOfBirth": "1990-01-01",
+  "interests": ["coding", "music", "travel"],
+  "skills": ["javascript", "typescript", "nodejs"],
+  "isActive": true
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Profile updated successfully",
+  "user": {
+    "id": "uuid",
+    "email": "john@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "bio": "Software developer passionate about clean code",
+    "city": "Istanbul",
+    "country": "Turkey",
+    "gender": "male",
+    "dateOfBirth": "1990-01-01",
+    "interests": ["coding", "music", "travel"],
+    "skills": ["javascript", "typescript", "nodejs"],
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-02T00:00:00Z"
+  }
+}
+```
+
+**Notes:**
+- All fields are optional
+- Only provided fields will be updated
+- Authentication token is required in the Authorization header
+- Profile updates publish `user.profile_updated` Kafka events
+
 ### User Search
 
 #### GET /users/search
@@ -151,6 +206,7 @@ GET /users/search?search=john&city=istanbul&minAge=25&maxAge=35&sortBy=firstName
 
 - `user.registered`: When a user registers
 - `user.logged_in`: When a user logs in
+- `user.profile_updated`: When a user updates their profile
 
 Topic: `user-events`
 

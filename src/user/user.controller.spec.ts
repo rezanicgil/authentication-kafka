@@ -2,15 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { Logger } from '@nestjs/common';
-import { mockSearchUsersDto, mockUsers } from '../test/test-helpers';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { mockSearchUsersDto, mockUsers, mockUser, mockUpdateProfileDto } from '../test/test-helpers';
 
 describe('UserController', () => {
   let controller: UserController;
   let userService: UserService;
-  let logger: Logger;
 
   const mockUserService = {
     searchUsers: jest.fn(),
+    updateProfile: jest.fn(),
   };
 
   const mockLogger = {
@@ -29,7 +30,12 @@ describe('UserController', () => {
           useValue: mockUserService,
         },
       ],
-    }).compile();
+    })
+    .overrideGuard(JwtAuthGuard)
+    .useValue({
+      canActivate: jest.fn(() => true),
+    })
+    .compile();
 
     controller = module.get<UserController>(UserController);
     userService = module.get<UserService>(UserService);
@@ -277,6 +283,174 @@ describe('UserController', () => {
       expect(result.pagination.page).toBe(1);
       expect(result.pagination.limit).toBe(10);
       expect(userService.searchUsers).toHaveBeenCalledWith(minimalSearchDto);
+    });
+  });
+
+  describe('updateProfile', () => {
+    const mockRequest = {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+      },
+    };
+
+    it('should update user profile successfully', async () => {
+      const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, mockUpdateProfileDto);
+
+      expect(result).toEqual({
+        message: 'Profile updated successfully',
+        user: updatedUser,
+      });
+
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        mockUpdateProfileDto
+      );
+      expect(userService.updateProfile).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle partial profile updates', async () => {
+      const partialUpdate = { bio: 'New bio only' };
+      const updatedUser = { ...mockUser, bio: 'New bio only' };
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, partialUpdate);
+
+      expect(result).toEqual({
+        message: 'Profile updated successfully',
+        user: updatedUser,
+      });
+
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        partialUpdate
+      );
+    });
+
+    it('should log profile update request and completion', async () => {
+      const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      await controller.updateProfile(mockRequest, mockUpdateProfileDto);
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        `Profile update request for user ${mockRequest.user.id}: ${JSON.stringify(mockUpdateProfileDto)}`
+      );
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        `Profile updated successfully for user ${mockRequest.user.id}`
+      );
+    });
+
+    it('should handle service errors', async () => {
+      mockUserService.updateProfile.mockRejectedValue(
+        new Error('Database connection failed')
+      );
+
+      await expect(
+        controller.updateProfile(mockRequest, mockUpdateProfileDto)
+      ).rejects.toThrow('Database connection failed');
+
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        mockUpdateProfileDto
+      );
+    });
+
+    it('should handle user not found errors', async () => {
+      mockUserService.updateProfile.mockRejectedValue(
+        new Error('User not found')
+      );
+
+      await expect(
+        controller.updateProfile(mockRequest, mockUpdateProfileDto)
+      ).rejects.toThrow('User not found');
+    });
+
+    it('should handle validation errors', async () => {
+      const invalidUpdateDto = { 
+        firstName: '', // Invalid empty string
+        bio: 'a'.repeat(501), // Too long
+      };
+
+      const updatedUser = { ...mockUser, ...invalidUpdateDto };
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, invalidUpdateDto);
+
+      expect(result).toBeDefined();
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        invalidUpdateDto
+      );
+    });
+
+    it('should handle date of birth updates', async () => {
+      const updateWithDate = { 
+        ...mockUpdateProfileDto, 
+        dateOfBirth: '1995-06-15' 
+      };
+      const updatedUser = { 
+        ...mockUser, 
+        ...updateWithDate, 
+        dateOfBirth: new Date('1995-06-15') 
+      };
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, updateWithDate);
+
+      expect(result.user.dateOfBirth).toEqual(new Date('1995-06-15'));
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        updateWithDate
+      );
+    });
+
+    it('should handle empty update requests', async () => {
+      const emptyUpdate = {};
+      const updatedUser = mockUser;
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, emptyUpdate);
+
+      expect(result).toEqual({
+        message: 'Profile updated successfully',
+        user: updatedUser,
+      });
+
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        emptyUpdate
+      );
+    });
+
+    it('should handle large data updates', async () => {
+      const largeUpdate = {
+        ...mockUpdateProfileDto,
+        interests: Array(10).fill('interest'),
+        skills: Array(20).fill('skill'),
+      };
+      const updatedUser = { ...mockUser, ...largeUpdate };
+      
+      mockUserService.updateProfile.mockResolvedValue(updatedUser);
+
+      const result = await controller.updateProfile(mockRequest, largeUpdate);
+
+      expect(result.user.interests).toHaveLength(10);
+      expect(result.user.skills).toHaveLength(20);
+      expect(userService.updateProfile).toHaveBeenCalledWith(
+        mockRequest.user.id,
+        largeUpdate
+      );
     });
   });
 });

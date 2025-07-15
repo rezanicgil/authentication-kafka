@@ -1,10 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-import { ConflictException, Logger } from '@nestjs/common';
-import { mockRegisterDto, mockUsers, mockUser, mockSearchUsersDto, createMockRepository } from '../test/test-helpers';
+import { ConflictException, NotFoundException, Logger } from '@nestjs/common';
+import { 
+  mockRegisterDto, 
+  mockUsers, 
+  mockUser, 
+  mockSearchUsersDto, 
+  mockUpdateProfileDto,
+  createMockRepository,
+  createMockKafkaService 
+} from '../test/test-helpers';
+import { KafkaService } from '../kafka/kafka.service';
 import * as bcrypt from 'bcryptjs';
 
 jest.mock('bcryptjs');
@@ -12,9 +21,9 @@ jest.mock('bcryptjs');
 describe('UserService', () => {
   let service: UserService;
   let userRepository: Repository<User>;
-  let logger: Logger;
 
   const mockUserRepository = createMockRepository();
+  const mockKafkaService = createMockKafkaService();
 
   const mockLogger = {
     log: jest.fn(),
@@ -30,6 +39,10 @@ describe('UserService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
+        },
+        {
+          provide: KafkaService,
+          useValue: mockKafkaService,
         },
       ],
     }).compile();
@@ -449,6 +462,126 @@ describe('UserService', () => {
       await service.searchUsers(emptySearchDto);
 
       expect(mockUserRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update user profile successfully', async () => {
+      const userId = 'test-user-id';
+      const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
+      
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.merge.mockReturnValue(updatedUser);
+      mockUserRepository.save.mockResolvedValue(updatedUser);
+      mockKafkaService.sendUserEvent.mockResolvedValue(undefined);
+
+      const result = await service.updateProfile(userId, mockUpdateProfileDto);
+
+      expect(result).toEqual(updatedUser);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(mockUserRepository.merge).toHaveBeenCalledWith(mockUser, {
+        ...mockUpdateProfileDto,
+        dateOfBirth: mockUser.dateOfBirth,
+      });
+      expect(mockUserRepository.save).toHaveBeenCalledWith(updatedUser);
+      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith('user.profile_updated', {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        updatedFields: Object.keys(mockUpdateProfileDto),
+        timestamp: expect.any(String),
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      const userId = 'nonexistent-user-id';
+      
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
+        NotFoundException
+      );
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(mockUserRepository.merge).not.toHaveBeenCalled();
+      expect(mockUserRepository.save).not.toHaveBeenCalled();
+      expect(mockKafkaService.sendUserEvent).not.toHaveBeenCalled();
+    });
+
+    it('should handle date of birth update', async () => {
+      const userId = 'test-user-id';
+      const updateDto = { ...mockUpdateProfileDto, dateOfBirth: '1995-06-15' };
+      const updatedUser = { ...mockUser, ...updateDto, dateOfBirth: new Date('1995-06-15') };
+      
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.merge.mockReturnValue(updatedUser);
+      mockUserRepository.save.mockResolvedValue(updatedUser);
+      mockKafkaService.sendUserEvent.mockResolvedValue(undefined);
+
+      const result = await service.updateProfile(userId, updateDto);
+
+      expect(mockUserRepository.merge).toHaveBeenCalledWith(mockUser, {
+        ...updateDto,
+        dateOfBirth: new Date('1995-06-15'),
+      });
+      expect(result).toEqual(updatedUser);
+    });
+
+    it('should handle partial profile updates', async () => {
+      const userId = 'test-user-id';
+      const partialUpdate = { bio: 'New bio only' };
+      const updatedUser = { ...mockUser, bio: 'New bio only' };
+      
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.merge.mockReturnValue(updatedUser);
+      mockUserRepository.save.mockResolvedValue(updatedUser);
+      mockKafkaService.sendUserEvent.mockResolvedValue(undefined);
+
+      const result = await service.updateProfile(userId, partialUpdate);
+
+      expect(result).toEqual(updatedUser);
+      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith('user.profile_updated', {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        updatedFields: ['bio'],
+        timestamp: expect.any(String),
+      });
+    });
+
+    it('should handle database save errors', async () => {
+      const userId = 'test-user-id';
+      const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
+      
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.merge.mockReturnValue(updatedUser);
+      mockUserRepository.save.mockRejectedValue(new Error('Database save failed'));
+
+      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
+        'Database save failed'
+      );
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(mockKafkaService.sendUserEvent).not.toHaveBeenCalled();
+    });
+
+    it('should handle Kafka event errors gracefully', async () => {
+      const userId = 'test-user-id';
+      const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
+      
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.merge.mockReturnValue(updatedUser);
+      mockUserRepository.save.mockResolvedValue(updatedUser);
+      mockKafkaService.sendUserEvent.mockRejectedValue(new Error('Kafka error'));
+
+      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
+        'Kafka error'
+      );
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(mockKafkaService.sendUserEvent).toHaveBeenCalled();
     });
   });
 });

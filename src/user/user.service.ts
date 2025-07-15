@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  NotFoundException,
   Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -9,6 +10,8 @@ import * as bcrypt from "bcryptjs";
 import { User } from "../entities/user.entity";
 import { RegisterDto } from "../dto/register.dto";
 import { SearchUsersDto } from "../dto/search-users.dto";
+import { UpdateProfileDto } from "../dto/update-profile.dto";
+import { KafkaService } from "../kafka/kafka.service";
 
 @Injectable()
 export class UserService {
@@ -17,6 +20,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async create(registerDto: RegisterDto): Promise<User> {
@@ -44,6 +48,34 @@ export class UserService {
 
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
+  }
+
+  async updateProfile(id: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const updatedUser = this.userRepository.merge(user, {
+      ...updateProfileDto,
+      dateOfBirth: updateProfileDto.dateOfBirth 
+        ? new Date(updateProfileDto.dateOfBirth) 
+        : user.dateOfBirth,
+    });
+
+    const savedUser = await this.userRepository.save(updatedUser);
+
+    await this.kafkaService.sendUserEvent("user.profile_updated", {
+      userId: savedUser.id,
+      email: savedUser.email,
+      firstName: savedUser.firstName,
+      lastName: savedUser.lastName,
+      updatedFields: Object.keys(updateProfileDto),
+      timestamp: new Date().toISOString(),
+    });
+
+    return savedUser;
   }
 
   async validatePassword(

@@ -1,6 +1,19 @@
-import { Controller, Get, Query, ClassSerializerInterceptor, UseInterceptors, Logger } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Put, 
+  Query, 
+  Body, 
+  Request, 
+  ClassSerializerInterceptor, 
+  UseInterceptors, 
+  UseGuards, 
+  Logger 
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { SearchUsersDto } from '../dto/search-users.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -27,6 +40,24 @@ export class UserController {
         hasNext: searchDto.page < Math.ceil(result.total / searchDto.limit),
         hasPrev: searchDto.page > 1,
       },
+    };
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Request() req: any,
+    @Body() updateProfileDto: UpdateProfileDto
+  ) {
+    this.logger.log(`Profile update request for user ${req.user.id}: ${JSON.stringify(updateProfileDto)}`);
+    
+    const updatedUser = await this.userService.updateProfile(req.user.id, updateProfileDto);
+    
+    this.logger.log(`Profile updated successfully for user ${req.user.id}`);
+    
+    return {
+      message: 'Profile updated successfully',
+      user: updatedUser,
     };
   }
 }
