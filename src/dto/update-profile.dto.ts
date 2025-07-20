@@ -8,7 +8,7 @@ import {
   MaxLength,
   MinLength,
   IsBoolean,
-} from "class-validator";
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()

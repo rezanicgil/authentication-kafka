@@ -1,4 +1,13 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsDateString, IsIn, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsArray,
+  IsDateString,
+  IsIn,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class SearchUsersDto {
@@ -35,12 +44,16 @@ export class SearchUsersDto {
 
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => typeof value === 'string' ? value.split(',') : value)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',') : value,
+  )
   interests?: string[];
 
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => typeof value === 'string' ? value.split(',') : value)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',') : value,
+  )
   skills?: string[];
 
   @IsOptional()

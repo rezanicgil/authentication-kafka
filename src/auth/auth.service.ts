@@ -1,10 +1,10 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import { UserService } from "../user/user.service";
-import { RegisterDto } from "../dto/register.dto";
-import { LoginDto } from "../dto/login.dto";
-import { User } from "../entities/user.entity";
-import { KafkaService } from "../kafka/kafka.service";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../user/user.service';
+import { RegisterDto } from '../dto/register.dto';
+import { LoginDto } from '../dto/login.dto';
+import { User } from '../entities/user.entity';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +19,7 @@ export class AuthService {
   ): Promise<{ user: Omit<User, 'password'>; token: string }> {
     const user = await this.userService.create(registerDto);
 
-    await this.kafkaService.sendUserEvent("user.registered", {
+    await this.kafkaService.sendUserEvent('user.registered', {
       userId: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -28,18 +28,20 @@ export class AuthService {
     });
 
     const token = this.generateToken(user);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
 
     return { user: userWithoutPassword, token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: Omit<User, 'password'>; token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ user: Omit<User, 'password'>; token: string }> {
     const user = await this.userService.findByEmail(loginDto.email);
 
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await this.userService.validatePassword(
@@ -48,10 +50,10 @@ export class AuthService {
     );
 
     if (!isPasswordValid || !user.isActive) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.kafkaService.sendUserEvent("user.logged_in", {
+    await this.kafkaService.sendUserEvent('user.logged_in', {
       userId: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -60,7 +62,7 @@ export class AuthService {
     });
 
     const token = this.generateToken(user);
-    
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
 

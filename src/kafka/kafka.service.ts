@@ -1,5 +1,5 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { Kafka, Producer } from "kafkajs";
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Kafka, Producer } from 'kafkajs';
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
@@ -8,8 +8,8 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
   constructor() {
     this.kafka = new Kafka({
-      clientId: "user-microservice",
-      brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
+      clientId: 'user-microservice',
+      brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
     });
     this.producer = this.kafka.producer();
   }
@@ -17,10 +17,10 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     try {
       await this.producer.connect();
-      console.log("Kafka producer connected");
+      console.log('Kafka producer connected');
     } catch (error) {
       console.warn(
-        "Kafka not available, continuing without events:",
+        'Kafka not available, continuing without events:',
         error.message,
       );
     }
@@ -29,16 +29,16 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy() {
     try {
       await this.producer.disconnect();
-      console.log("Kafka producer disconnected");
+      console.log('Kafka producer disconnected');
     } catch (error) {
-      console.error("Failed to disconnect Kafka producer:", error);
+      console.error('Failed to disconnect Kafka producer:', error);
     }
   }
 
   async sendUserEvent(eventType: string, data: any) {
     try {
       await this.producer.send({
-        topic: "user-events",
+        topic: 'user-events',
         messages: [
           {
             key: data.userId,
@@ -52,7 +52,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
       });
       console.log(`User event sent: ${eventType}`, data);
     } catch (error) {
-      console.error("Failed to send user event:", error);
+      console.error('Failed to send user event:', error);
     }
   }
 }

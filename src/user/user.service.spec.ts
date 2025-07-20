@@ -4,14 +4,14 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { ConflictException, NotFoundException, Logger } from '@nestjs/common';
-import { 
-  mockRegisterDto, 
-  mockUsers, 
-  mockUser, 
-  mockSearchUsersDto, 
+import {
+  mockRegisterDto,
+  mockUsers,
+  mockUser,
+  mockSearchUsersDto,
   mockUpdateProfileDto,
   createMockRepository,
-  createMockKafkaService 
+  createMockKafkaService,
 } from '../test/test-helpers';
 import { KafkaService } from '../kafka/kafka.service';
 import * as bcrypt from 'bcryptjs';
@@ -49,7 +49,7 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    
+
     // Mock the logger
     jest.spyOn(Logger.prototype, 'log').mockImplementation(mockLogger.log);
   });
@@ -61,7 +61,7 @@ describe('UserService', () => {
   describe('create', () => {
     it('should create a new user successfully', async () => {
       const hashedPassword = 'hashed-password';
-      
+
       mockUserRepository.findOne.mockResolvedValue(null);
       mockUserRepository.create.mockReturnValue(mockUser);
       mockUserRepository.save.mockResolvedValue(mockUser);
@@ -85,7 +85,7 @@ describe('UserService', () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       await expect(service.create(mockRegisterDto)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
@@ -101,7 +101,7 @@ describe('UserService', () => {
       (bcrypt.hash as jest.Mock).mockRejectedValue(new Error('Hashing failed'));
 
       await expect(service.create(mockRegisterDto)).rejects.toThrow(
-        'Hashing failed'
+        'Hashing failed',
       );
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
@@ -114,14 +114,16 @@ describe('UserService', () => {
 
     it('should handle database save errors', async () => {
       const hashedPassword = 'hashed-password';
-      
+
       mockUserRepository.findOne.mockResolvedValue(null);
       mockUserRepository.create.mockReturnValue(mockUser);
-      mockUserRepository.save.mockRejectedValue(new Error('Database save failed'));
+      mockUserRepository.save.mockRejectedValue(
+        new Error('Database save failed'),
+      );
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
 
       await expect(service.create(mockRegisterDto)).rejects.toThrow(
-        'Database save failed'
+        'Database save failed',
       );
 
       expect(userRepository.save).toHaveBeenCalled();
@@ -155,7 +157,7 @@ describe('UserService', () => {
       mockUserRepository.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(service.findByEmail(mockUser.email)).rejects.toThrow(
-        'Database error'
+        'Database error',
       );
     });
   });
@@ -188,27 +190,41 @@ describe('UserService', () => {
     it('should validate password correctly', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validatePassword('password123', 'hashed-password');
+      const result = await service.validatePassword(
+        'password123',
+        'hashed-password',
+      );
 
       expect(result).toBe(true);
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashed-password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        'hashed-password',
+      );
     });
 
     it('should return false for invalid password', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      const result = await service.validatePassword('wrongpassword', 'hashed-password');
+      const result = await service.validatePassword(
+        'wrongpassword',
+        'hashed-password',
+      );
 
       expect(result).toBe(false);
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrongpassword', 'hashed-password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'wrongpassword',
+        'hashed-password',
+      );
     });
 
     it('should handle bcrypt comparison errors', async () => {
-      (bcrypt.compare as jest.Mock).mockRejectedValue(new Error('Comparison failed'));
-
-      await expect(service.validatePassword('password123', 'hashed-password')).rejects.toThrow(
-        'Comparison failed'
+      (bcrypt.compare as jest.Mock).mockRejectedValue(
+        new Error('Comparison failed'),
       );
+
+      await expect(
+        service.validatePassword('password123', 'hashed-password'),
+      ).rejects.toThrow('Comparison failed');
     });
   });
 
@@ -240,10 +256,14 @@ describe('UserService', () => {
 
       expect(result).toEqual(expectedResult);
       expect(mockLogger.log).toHaveBeenCalledWith(
-        `Executing search with filters: ${JSON.stringify(mockSearchUsersDto)}`
+        `Executing search with filters: ${JSON.stringify(mockSearchUsersDto)}`,
       );
-      expect(mockLogger.log).toHaveBeenCalledWith('Query returned 3 total results');
-      expect(mockLogger.log).toHaveBeenCalledWith('Returning 3 users for page 1');
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        'Query returned 3 total results',
+      );
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        'Returning 3 users for page 1',
+      );
     });
 
     it('should handle empty search results', async () => {
@@ -299,25 +319,28 @@ describe('UserService', () => {
 
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'user.isActive = :isActive',
-        { isActive: true }
+        { isActive: true },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         '(user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.email ILIKE :search)',
-        { search: '%john%' }
+        { search: '%john%' },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.city ILIKE :city',
-        { city: '%Istanbul%' }
+        { city: '%Istanbul%' },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.country ILIKE :country',
-        { country: '%Turkey%' }
+        { country: '%Turkey%' },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.gender = :gender',
-        { gender: 'male' }
+        { gender: 'male' },
       );
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('user.firstName', 'ASC');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'user.firstName',
+        'ASC',
+      );
     });
 
     it('should handle age range filters', async () => {
@@ -337,11 +360,11 @@ describe('UserService', () => {
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.dateOfBirth >= :minBirthDate',
-        { minBirthDate: expect.any(Date) }
+        { minBirthDate: expect.any(Date) },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.dateOfBirth <= :maxBirthDate',
-        { maxBirthDate: expect.any(Date) }
+        { maxBirthDate: expect.any(Date) },
       );
     });
 
@@ -362,11 +385,11 @@ describe('UserService', () => {
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.interests && :interests',
-        { interests: ['coding', 'music'] }
+        { interests: ['coding', 'music'] },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.skills && :skills',
-        { skills: ['javascript', 'typescript'] }
+        { skills: ['javascript', 'typescript'] },
       );
     });
 
@@ -388,15 +411,15 @@ describe('UserService', () => {
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.createdAt >= :joinedAfter',
-        { joinedAfter: new Date('2023-01-01') }
+        { joinedAfter: new Date('2023-01-01') },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.createdAt <= :joinedBefore',
-        { joinedBefore: new Date('2023-12-31') }
+        { joinedBefore: new Date('2023-12-31') },
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'user.lastLoginAt >= :lastActiveAfter',
-        { lastActiveAfter: new Date('2023-06-01') }
+        { lastActiveAfter: new Date('2023-06-01') },
       );
     });
 
@@ -404,16 +427,18 @@ describe('UserService', () => {
       mockQueryBuilder.getCount.mockRejectedValue(new Error('Database error'));
 
       await expect(service.searchUsers(mockSearchUsersDto)).rejects.toThrow(
-        'Database error'
+        'Database error',
       );
     });
 
     it('should handle query builder errors', async () => {
       mockQueryBuilder.getCount.mockResolvedValue(5);
-      mockQueryBuilder.getMany.mockRejectedValue(new Error('Query execution failed'));
+      mockQueryBuilder.getMany.mockRejectedValue(
+        new Error('Query execution failed'),
+      );
 
       await expect(service.searchUsers(mockSearchUsersDto)).rejects.toThrow(
-        'Query execution failed'
+        'Query execution failed',
       );
     });
 
@@ -432,7 +457,7 @@ describe('UserService', () => {
 
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'user.isActive = :isActive',
-        { isActive: true }
+        { isActive: true },
       );
       expect(result.users).toEqual(mockUsers);
       expect(result.total).toBe(10);
@@ -461,7 +486,9 @@ describe('UserService', () => {
 
       await service.searchUsers(emptySearchDto);
 
-      expect(mockUserRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(mockUserRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'user',
+      );
     });
   });
 
@@ -469,7 +496,7 @@ describe('UserService', () => {
     it('should update user profile successfully', async () => {
       const userId = 'test-user-id';
       const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
-      
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.merge.mockReturnValue(updatedUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
@@ -478,32 +505,39 @@ describe('UserService', () => {
       const result = await service.updateProfile(userId, mockUpdateProfileDto);
 
       expect(result).toEqual(updatedUser);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { id: userId },
+      });
       expect(mockUserRepository.merge).toHaveBeenCalledWith(mockUser, {
         ...mockUpdateProfileDto,
         dateOfBirth: mockUser.dateOfBirth,
       });
       expect(mockUserRepository.save).toHaveBeenCalledWith(updatedUser);
-      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith('user.profile_updated', {
-        userId: updatedUser.id,
-        email: updatedUser.email,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        updatedFields: Object.keys(mockUpdateProfileDto),
-        timestamp: expect.any(String),
-      });
+      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith(
+        'user.profile_updated',
+        {
+          userId: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          updatedFields: Object.keys(mockUpdateProfileDto),
+          timestamp: expect.any(String),
+        },
+      );
     });
 
     it('should throw NotFoundException if user not found', async () => {
       const userId = 'nonexistent-user-id';
-      
+
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        service.updateProfile(userId, mockUpdateProfileDto),
+      ).rejects.toThrow(NotFoundException);
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where: { id: userId },
+      });
       expect(mockUserRepository.merge).not.toHaveBeenCalled();
       expect(mockUserRepository.save).not.toHaveBeenCalled();
       expect(mockKafkaService.sendUserEvent).not.toHaveBeenCalled();
@@ -512,8 +546,12 @@ describe('UserService', () => {
     it('should handle date of birth update', async () => {
       const userId = 'test-user-id';
       const updateDto = { ...mockUpdateProfileDto, dateOfBirth: '1995-06-15' };
-      const updatedUser = { ...mockUser, ...updateDto, dateOfBirth: new Date('1995-06-15') };
-      
+      const updatedUser = {
+        ...mockUser,
+        ...updateDto,
+        dateOfBirth: new Date('1995-06-15'),
+      };
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.merge.mockReturnValue(updatedUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
@@ -532,7 +570,7 @@ describe('UserService', () => {
       const userId = 'test-user-id';
       const partialUpdate = { bio: 'New bio only' };
       const updatedUser = { ...mockUser, bio: 'New bio only' };
-      
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.merge.mockReturnValue(updatedUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
@@ -541,27 +579,32 @@ describe('UserService', () => {
       const result = await service.updateProfile(userId, partialUpdate);
 
       expect(result).toEqual(updatedUser);
-      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith('user.profile_updated', {
-        userId: updatedUser.id,
-        email: updatedUser.email,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        updatedFields: ['bio'],
-        timestamp: expect.any(String),
-      });
+      expect(mockKafkaService.sendUserEvent).toHaveBeenCalledWith(
+        'user.profile_updated',
+        {
+          userId: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          updatedFields: ['bio'],
+          timestamp: expect.any(String),
+        },
+      );
     });
 
     it('should handle database save errors', async () => {
       const userId = 'test-user-id';
       const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
-      
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.merge.mockReturnValue(updatedUser);
-      mockUserRepository.save.mockRejectedValue(new Error('Database save failed'));
-
-      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
-        'Database save failed'
+      mockUserRepository.save.mockRejectedValue(
+        new Error('Database save failed'),
       );
+
+      await expect(
+        service.updateProfile(userId, mockUpdateProfileDto),
+      ).rejects.toThrow('Database save failed');
 
       expect(mockUserRepository.save).toHaveBeenCalled();
       expect(mockKafkaService.sendUserEvent).not.toHaveBeenCalled();
@@ -570,15 +613,17 @@ describe('UserService', () => {
     it('should handle Kafka event errors gracefully', async () => {
       const userId = 'test-user-id';
       const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
-      
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.merge.mockReturnValue(updatedUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
-      mockKafkaService.sendUserEvent.mockRejectedValue(new Error('Kafka error'));
-
-      await expect(service.updateProfile(userId, mockUpdateProfileDto)).rejects.toThrow(
-        'Kafka error'
+      mockKafkaService.sendUserEvent.mockRejectedValue(
+        new Error('Kafka error'),
       );
+
+      await expect(
+        service.updateProfile(userId, mockUpdateProfileDto),
+      ).rejects.toThrow('Kafka error');
 
       expect(mockUserRepository.save).toHaveBeenCalled();
       expect(mockKafkaService.sendUserEvent).toHaveBeenCalled();

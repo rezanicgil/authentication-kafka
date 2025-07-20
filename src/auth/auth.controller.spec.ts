@@ -51,11 +51,11 @@ describe('AuthController', () => {
 
     it('should throw ConflictException if user already exists', async () => {
       mockAuthService.register.mockRejectedValue(
-        new ConflictException('User with this email already exists')
+        new ConflictException('User with this email already exists'),
       );
 
       await expect(controller.register(mockRegisterDto)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
       expect(authService.register).toHaveBeenCalledWith(mockRegisterDto);
     });
@@ -67,7 +67,7 @@ describe('AuthController', () => {
       };
 
       mockAuthService.register.mockRejectedValue(
-        new Error('Validation failed')
+        new Error('Validation failed'),
       );
 
       await expect(controller.register(invalidDto)).rejects.toThrow();
@@ -94,11 +94,11 @@ describe('AuthController', () => {
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
       mockAuthService.login.mockRejectedValue(
-        new UnauthorizedException('Invalid credentials')
+        new UnauthorizedException('Invalid credentials'),
       );
 
       await expect(controller.login(mockLoginDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
       expect(authService.login).toHaveBeenCalledWith(mockLoginDto);
     });
@@ -110,11 +110,11 @@ describe('AuthController', () => {
       };
 
       mockAuthService.login.mockRejectedValue(
-        new UnauthorizedException('Invalid credentials')
+        new UnauthorizedException('Invalid credentials'),
       );
 
       await expect(controller.login(nonExistentUserDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
       expect(authService.login).toHaveBeenCalledWith(nonExistentUserDto);
     });
@@ -126,11 +126,11 @@ describe('AuthController', () => {
       };
 
       mockAuthService.login.mockRejectedValue(
-        new UnauthorizedException('Invalid credentials')
+        new UnauthorizedException('Invalid credentials'),
       );
 
       await expect(controller.login(wrongPasswordDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
       expect(authService.login).toHaveBeenCalledWith(wrongPasswordDto);
     });
@@ -141,7 +141,7 @@ describe('AuthController', () => {
       const emptyDto = {} as any;
 
       mockAuthService.register.mockRejectedValue(
-        new Error('Validation failed')
+        new Error('Validation failed'),
       );
 
       await expect(controller.register(emptyDto)).rejects.toThrow();
@@ -151,9 +151,7 @@ describe('AuthController', () => {
     it('should handle empty request body for login', async () => {
       const emptyDto = {} as any;
 
-      mockAuthService.login.mockRejectedValue(
-        new Error('Validation failed')
-      );
+      mockAuthService.login.mockRejectedValue(new Error('Validation failed'));
 
       await expect(controller.login(emptyDto)).rejects.toThrow();
       expect(authService.login).toHaveBeenCalledWith(emptyDto);

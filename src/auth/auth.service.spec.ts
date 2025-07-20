@@ -81,22 +81,25 @@ describe('AuthService', () => {
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
       });
-      expect(kafkaService.sendUserEvent).toHaveBeenCalledWith('user.registered', {
-        userId: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        timestamp: expect.any(String),
-      });
+      expect(kafkaService.sendUserEvent).toHaveBeenCalledWith(
+        'user.registered',
+        {
+          userId: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          timestamp: expect.any(String),
+        },
+      );
     });
 
     it('should throw ConflictException when user already exists', async () => {
       mockUserService.create.mockRejectedValue(
-        new ConflictException('User with this email already exists')
+        new ConflictException('User with this email already exists'),
       );
 
       await expect(service.register(mockRegisterDto)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
 
       expect(userService.create).toHaveBeenCalledWith(mockRegisterDto);
@@ -106,11 +109,11 @@ describe('AuthService', () => {
 
     it('should handle database errors during registration', async () => {
       mockUserService.create.mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       await expect(service.register(mockRegisterDto)).rejects.toThrow(
-        'Database connection failed'
+        'Database connection failed',
       );
 
       expect(userService.create).toHaveBeenCalledWith(mockRegisterDto);
@@ -126,7 +129,7 @@ describe('AuthService', () => {
       });
 
       await expect(service.register(mockRegisterDto)).rejects.toThrow(
-        'JWT signing failed'
+        'JWT signing failed',
       );
 
       expect(userService.create).toHaveBeenCalledWith(mockRegisterDto);
@@ -142,12 +145,12 @@ describe('AuthService', () => {
       mockUserService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue(token);
       mockKafkaService.sendUserEvent.mockRejectedValue(
-        new Error('Kafka unavailable')
+        new Error('Kafka unavailable'),
       );
 
       // Should throw error if Kafka fails (based on current implementation)
       await expect(service.register(mockRegisterDto)).rejects.toThrow(
-        'Kafka unavailable'
+        'Kafka unavailable',
       );
     });
   });
@@ -173,7 +176,7 @@ describe('AuthService', () => {
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
       expect(userService.validatePassword).toHaveBeenCalledWith(
         mockLoginDto.password,
-        mockUser.password
+        mockUser.password,
       );
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: mockUser.id,
@@ -181,20 +184,23 @@ describe('AuthService', () => {
         firstName: mockUser.firstName,
         lastName: mockUser.lastName,
       });
-      expect(kafkaService.sendUserEvent).toHaveBeenCalledWith('user.logged_in', {
-        userId: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        timestamp: expect.any(String),
-      });
+      expect(kafkaService.sendUserEvent).toHaveBeenCalledWith(
+        'user.logged_in',
+        {
+          userId: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          timestamp: expect.any(String),
+        },
+      );
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
       mockUserService.findByEmail.mockResolvedValue(null);
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
 
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
@@ -208,13 +214,13 @@ describe('AuthService', () => {
       mockUserService.validatePassword.mockResolvedValue(false);
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
 
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
       expect(userService.validatePassword).toHaveBeenCalledWith(
         mockLoginDto.password,
-        mockUser.password
+        mockUser.password,
       );
       expect(jwtService.sign).not.toHaveBeenCalled();
       expect(kafkaService.sendUserEvent).not.toHaveBeenCalled();
@@ -226,13 +232,13 @@ describe('AuthService', () => {
       mockUserService.validatePassword.mockResolvedValue(true);
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
 
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
       expect(userService.validatePassword).toHaveBeenCalledWith(
         mockLoginDto.password,
-        inactiveUser.password
+        inactiveUser.password,
       );
       expect(jwtService.sign).not.toHaveBeenCalled();
       expect(kafkaService.sendUserEvent).not.toHaveBeenCalled();
@@ -240,11 +246,11 @@ describe('AuthService', () => {
 
     it('should handle database errors during login', async () => {
       mockUserService.findByEmail.mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        'Database connection failed'
+        'Database connection failed',
       );
 
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
@@ -262,13 +268,13 @@ describe('AuthService', () => {
       });
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        'JWT signing failed'
+        'JWT signing failed',
       );
 
       expect(userService.findByEmail).toHaveBeenCalledWith(mockLoginDto.email);
       expect(userService.validatePassword).toHaveBeenCalledWith(
         mockLoginDto.password,
-        mockUser.password
+        mockUser.password,
       );
       expect(kafkaService.sendUserEvent).toHaveBeenCalled();
       expect(jwtService.sign).toHaveBeenCalled();
@@ -283,12 +289,12 @@ describe('AuthService', () => {
       mockUserService.validatePassword.mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue(token);
       mockKafkaService.sendUserEvent.mockRejectedValue(
-        new Error('Kafka unavailable')
+        new Error('Kafka unavailable'),
       );
 
       // Should throw error if Kafka fails (based on current implementation)
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        'Kafka unavailable'
+        'Kafka unavailable',
       );
     });
   });
@@ -298,7 +304,7 @@ describe('AuthService', () => {
       mockUserService.findByEmail.mockResolvedValue({});
 
       await expect(service.login(mockLoginDto)).rejects.toThrow(
-        UnauthorizedException
+        UnauthorizedException,
       );
     });
 
