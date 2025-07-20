@@ -62,8 +62,49 @@ services:
       - user-network
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: user-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - user-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: user-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - user-network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: user-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:password@postgres:5432/userdb?sslmode=disable"
+    depends_on:
+      - postgres
+    networks:
+      - user-network
+
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   user-network:
