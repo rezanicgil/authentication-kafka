@@ -6,6 +6,8 @@ import { databaseConfig } from "./config/database.config";
 import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
 import { KafkaModule } from "./kafka/kafka.module";
+import { HealthModule } from "./health/health.module";
+import { MetricsModule } from "./metrics/metrics.module";
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { KafkaModule } from "./kafka/kafka.module";
     AuthModule,
     UserModule,
     KafkaModule,
+    HealthModule,
+    MetricsModule,
   ],
 })
 export class AppModule {}
