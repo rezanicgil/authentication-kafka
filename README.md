@@ -1,6 +1,27 @@
 # User Microservice
 
-A NestJS-based user authentication microservice with Kafka integration for event-driven architecture.
+A NestJS service for account registration, login and profile search. PostgreSQL holds the account record. Kafka publishes notifications for services that react to account activity.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Client --> API[NestJS HTTP API]
+  API --> Accounts[Auth and user services]
+  Accounts --> DB[(PostgreSQL)]
+  Accounts --> Producer[Kafka producer]
+  Producer --> Topic[user-events]
+```
+
+## Key decisions and reliability
+
+Registration hashes the password before saving the account. Registration and login both await the Kafka publish attempt before returning a signed JWT. Broker errors are logged and the request can still succeed. This keeps account access available during broker failures, but a slow broker can delay the response.
+
+Profile updates write to PostgreSQL before publishing. A process crash between those operations can leave a saved change without a corresponding event. There is no transactional outbox or replay worker. The producer uses the user ID as its partition key. Consumers must handle repeats if their side effects require it.
+
+## Known limitations
+
+This is a local reference service. User events contain profile information such as email addresses. Use synthetic accounts for local runs. The bundled monitoring configuration and Compose credentials are for development. The repository includes load scripts but does not establish a production capacity figure.
 
 ## Features
 
@@ -16,7 +37,7 @@ A NestJS-based user authentication microservice with Kafka integration for event
 
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Set up environment variables
 cp .env.example .env
@@ -232,7 +253,7 @@ The User entity includes the following fields:
 
 ## Testing
 
-The project includes comprehensive test coverage with unit tests, integration tests, and end-to-end tests.
+The unit suites exercise auth and user services and controllers. The search end-to-end suite uses the configured database and clears the user table before each case. Point it at a disposable test database.
 
 ### Running Tests
 

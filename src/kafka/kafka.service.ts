@@ -50,7 +50,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
           },
         ],
       });
-      console.log(`User event sent: ${eventType}`, data);
+      console.log(`User event sent: ${eventType}`);
     } catch (error) {
       console.error('Failed to send user event:', error);
     }
