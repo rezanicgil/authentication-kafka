@@ -21,6 +21,8 @@ Profile updates write to PostgreSQL before publishing. A process crash between t
 
 ## Known limitations
 
+Search logs record pagination and result counts. Profile updates log completion. Search terms, profile values and account IDs are omitted from these request logs.
+
 This is a local reference service. User events contain profile information such as email addresses. Use synthetic accounts for local runs. The bundled monitoring configuration and Compose credentials are for development. The repository includes load scripts but does not establish a production capacity figure.
 
 ## Features

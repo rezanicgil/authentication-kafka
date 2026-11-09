@@ -91,10 +91,6 @@ export class UserService {
   async searchUsers(
     searchDto: SearchUsersDto,
   ): Promise<{ users: User[]; total: number }> {
-    this.logger.log(
-      `Executing search with filters: ${JSON.stringify(searchDto)}`,
-    );
-
     const queryBuilder = this.createSearchQuery(searchDto);
 
     const total = await queryBuilder.getCount();

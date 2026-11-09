@@ -55,6 +55,7 @@ describe('UserService', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
@@ -255,9 +256,7 @@ describe('UserService', () => {
       const result = await service.searchUsers(mockSearchUsersDto);
 
       expect(result).toEqual(expectedResult);
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        `Executing search with filters: ${JSON.stringify(mockSearchUsersDto)}`,
-      );
+      expect(mockLogger.log).toHaveBeenCalledTimes(2);
       expect(mockLogger.log).toHaveBeenCalledWith(
         'Query returned 3 total results',
       );

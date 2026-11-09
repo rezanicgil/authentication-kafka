@@ -50,6 +50,7 @@ describe('UserController', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
@@ -181,7 +182,7 @@ describe('UserController', () => {
       });
     });
 
-    it('should log search request and completion', async () => {
+    it('should log only the search result count and pagination', async () => {
       const serviceResult = {
         users: mockUsers,
         total: 3,
@@ -191,9 +192,7 @@ describe('UserController', () => {
 
       await controller.searchUsers(mockSearchUsersDto);
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        `Search request received: ${JSON.stringify(mockSearchUsersDto)}`,
-      );
+      expect(mockLogger.log).toHaveBeenCalledTimes(1);
       expect(mockLogger.log).toHaveBeenCalledWith(
         'Search completed: Found 3 users, page 1/1',
       );
@@ -342,19 +341,15 @@ describe('UserController', () => {
       );
     });
 
-    it('should log profile update request and completion', async () => {
+    it('should log profile completion without the account ID or edited values', async () => {
       const updatedUser = { ...mockUser, ...mockUpdateProfileDto };
 
       mockUserService.updateProfile.mockResolvedValue(updatedUser);
 
       await controller.updateProfile(mockRequest, mockUpdateProfileDto);
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        `Profile update request for user ${mockRequest.user.id}: ${JSON.stringify(mockUpdateProfileDto)}`,
-      );
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        `Profile updated successfully for user ${mockRequest.user.id}`,
-      );
+      expect(mockLogger.log).toHaveBeenCalledTimes(1);
+      expect(mockLogger.log).toHaveBeenCalledWith('Profile updated successfully');
     });
 
     it('should handle service errors', async () => {

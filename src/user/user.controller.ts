@@ -24,8 +24,6 @@ export class UserController {
 
   @Get('search')
   async searchUsers(@Query() searchDto: SearchUsersDto) {
-    this.logger.log(`Search request received: ${JSON.stringify(searchDto)}`);
-
     const result = await this.userService.searchUsers(searchDto);
 
     this.logger.log(
@@ -51,16 +49,12 @@ export class UserController {
     @Request() req: any,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    this.logger.log(
-      `Profile update request for user ${req.user.id}: ${JSON.stringify(updateProfileDto)}`,
-    );
-
     const updatedUser = await this.userService.updateProfile(
       req.user.id,
       updateProfileDto,
     );
 
-    this.logger.log(`Profile updated successfully for user ${req.user.id}`);
+    this.logger.log('Profile updated successfully');
 
     return {
       message: 'Profile updated successfully',
